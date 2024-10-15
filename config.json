@@ -1,0 +1,8 @@
+{
+    "use_proxy":  true,
+    "auto_sell": true,
+    "auto_speedup": true,
+    "auto_task": true,
+    "delay_account": 5,
+    "cycle_delay": 3800
+}
