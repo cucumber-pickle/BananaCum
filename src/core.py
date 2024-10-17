@@ -299,11 +299,14 @@ class Banana:
         if config.get("auto_task", False):
             while True:
                 claim_lottery_response = self.claim_quest_lottery(token)
-                if claim_lottery_response.get('msg') == "Success":
-                    log(hju + "Successfully claimed quest lottery!")
-                else:
-                    log(mrh + "Not available quest lottery to claim.")
-                    break
+                try:
+                    if claim_lottery_response.get('msg') == "Success":
+                        log(hju + "Successfully claimed quest lottery!")
+                    else:
+                        log(mrh + "Not available quest lottery to claim.")
+                        break
+                except Exception as e:
+                    log(mrh + f"Failed quest lottery to claim")
 
             all_quests = self.quest_list(token)
             for quest in all_quests:
