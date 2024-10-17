@@ -318,7 +318,10 @@ class Banana:
                 if not achieve_status and not claim_status:
                     self.achieve_quest(token, quest_id=quest_id)
                     claim_quest = self.claim_quest(token, quest_id=quest_id)
-                    quest_status = claim_quest.get("msg", "Failed")
+                    try:
+                        quest_status = claim_quest.get("msg", "Failed")
+                    except:
+                        log(mrh + f"Failed quest")
 
                     if quest_status == "Success":
                         log(hju + f"Quest {pth}{quest_name} claimed successfully.")
@@ -327,8 +330,10 @@ class Banana:
 
                 elif achieve_status and not claim_status:
                     claim_quest = self.claim_quest(token, quest_id=quest_id)
-                    quest_status = claim_quest.get("msg", "Failed")
-
+                    try:
+                        quest_status = claim_quest.get("msg", "Failed")
+                    except:
+                        log(mrh + f"Failed quest")
                     if quest_status == "Success":
                         log(hju + f"Quest {pth}{quest_name} claimed successfully.")
                     else:
