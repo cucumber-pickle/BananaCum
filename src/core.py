@@ -400,7 +400,10 @@ class Banana:
         while True:
             try:
                 response = self._post('do_speedup', payload)
-                data = response.get('data', {})
+                try:
+                    data = response.get('data', {})
+                except Exception as e:
+                    log(mrh + "Failed speed up!")
                 if not data:
                     return
 
