@@ -314,40 +314,39 @@ class Banana:
                 quest_name = fame(quest["quest_name"])
                 achieve_status = quest["is_achieved"]
                 claim_status = quest["is_claimed"]
-
-                if not achieve_status and not claim_status:
-                    self.achieve_quest(token, quest_id=quest_id)
-                    claim_quest = self.claim_quest(token, quest_id=quest_id)
-                    try:
+                try:
+                    if not achieve_status and not claim_status:
+                        self.achieve_quest(token, quest_id=quest_id)
+                        claim_quest = self.claim_quest(token, quest_id=quest_id)
                         quest_status = claim_quest.get("msg", "Failed")
-                    except:
-                        log(mrh + f"Failed quest")
 
-                    if quest_status == "Success":
-                        log(hju + f"Quest {pth}{quest_name} claimed successfully.")
-                    else:
-                        log(mrh + f"Verification needed for {pth}{quest_name}.")
+                        if quest_status == "Success":
+                            log(hju + f"Quest {pth}{quest_name} claimed successfully.")
+                        else:
+                            log(mrh + f"Verification needed for {pth}{quest_name}.")
 
-                elif achieve_status and not claim_status:
-                    claim_quest = self.claim_quest(token, quest_id=quest_id)
-                    try:
-                        quest_status = claim_quest.get("msg", "Failed")
-                    except:
-                        log(mrh + f"Failed quest")
-                    if quest_status == "Success":
-                        log(hju + f"Quest {pth}{quest_name} claimed successfully.")
-                    else:
-                        log(mrh + f"Real verification needed for {pth}{quest_name}.")
+                    elif achieve_status and not claim_status:
+                        claim_quest = self.claim_quest(token, quest_id=quest_id)
+                        try:
+                            quest_status = claim_quest.get("msg", "Failed")
+                        except:
+                            log(mrh + f"Failed quest")
+                        if quest_status == "Success":
+                            log(hju + f"Quest {pth}{quest_name} claimed successfully.")
+                        else:
+                            log(mrh + f"Real verification needed for {pth}{quest_name}.")
 
-                progress = claim_quest.get('data', {}).get('progress', "0/3")
-                if progress == "3/3":
-                    log(hju + f"Quest progress complete ({progress}). Attempting to claim lottery again...")
-                    claim_lottery_response = self.claim_quest_lottery(token)
-                    
-                    if claim_lottery_response.get('msg') == "Success":
-                        log(hju + "Successfully claimed quest lottery!")
-                    else:
-                        log(mrh + "Failed to claim quest lottery.")
+                    progress = claim_quest.get('data', {}).get('progress', "0/3")
+                    if progress == "3/3":
+                        log(hju + f"Quest progress complete ({progress}). Attempting to claim lottery again...")
+                        claim_lottery_response = self.claim_quest_lottery(token)
+
+                        if claim_lottery_response.get('msg') == "Success":
+                            log(hju + "Successfully claimed quest lottery!")
+                        else:
+                            log(mrh + "Failed to claim quest lottery.")
+                except Exception as e:
+                    log(mrh + f"Failed claim quest")
             
             log(hju + f"Current progress: {progress}, more quests needed.")
         
