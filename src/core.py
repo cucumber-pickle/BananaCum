@@ -97,24 +97,23 @@ class Banana:
         self.headers['User-Agent'] = generate_random_user_agent()
 
     def _post(self, endpoint, payload):
-        while True:
-            try:
-                self.set_random_user_agent()
-                response = self.scraper.post(
-                    url=f"{self.base_url}/{endpoint}",
-                    headers=self.headers,
-                    json=payload,
-                    proxies=self.get_current_proxy(),
-                    timeout=10
-                )
-                response.raise_for_status()
-                return response.json()
-            except RequestException as e:
-                log(mrh + f"Something wrong please check {hju}last.log {mrh}file!")
-                log_error(f"{str(e)}")
-                if self.proxies:
-                    self.proxy_index = (self.proxy_index + 1) % len(self.proxies)
-                time.sleep(2) 
+        try:
+            self.set_random_user_agent()
+            response = self.scraper.post(
+                url=f"{self.base_url}/{endpoint}",
+                headers=self.headers,
+                json=payload,
+                proxies=self.get_current_proxy(),
+                timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except RequestException as e:
+            # log(mrh + f"Something wrong please check {hju}last.log {mrh}file!")
+            log_error(f"{str(e)}")
+            if self.proxies:
+                self.proxy_index = (self.proxy_index + 1) % len(self.proxies)
+
 
     def _get(self, endpoint):
         while True:
@@ -138,6 +137,14 @@ class Banana:
     def set_auth_header(self, token: str):
         self.headers.update({'Authorization': token})
 
+    def get_user_ads_info(self, token: str):
+        self.set_auth_header(token)
+        return self._get('user_ads_info')
+
+    def get_share_info(self, token: str):
+        self.set_auth_header(token)
+        return self._get('get_share_info')
+    get_share_info
 
     def get_user_info(self, token: str):
         self.set_auth_header(token)
@@ -193,10 +200,16 @@ class Banana:
 
         get_lottery = self.get_user_info(token)
         harvest = get_lottery['data']['lottery_info']['remain_lottery_count']
-        while harvest > 0:
-            harvest = self.do_lottery(token)
-            log(kng + "Waiting 10 seconds before next lottery")
-            countdown_timer(10)
+        log(bru + f"You have {pth}{harvest} remain_lottery_count")
+
+        try:
+            while harvest > 0:
+                harvest = self.do_lottery(token)
+                log(kng + "Waiting 10 seconds before next lottery")
+                countdown_timer(10)
+        except Exception as e:
+            log(mrh + f"Сlaim harvest failed!")
+
 
     def do_click(self, token: str, click_count: int):
         self.set_auth_header(token)

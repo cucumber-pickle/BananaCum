@@ -11,12 +11,17 @@ This repository contains a Python script designed to automate interactions with 
  - Collect PEEL also USDT
  - Withdraw USDT Instant
 
-### What's new in this update? 16.10.2024
+### What's new in this update? 
+
+16.10.2024
 
 - fixed a lottery bug. Added a 10-second delay between lotteries
 - added claim of rewards for invited friends
 - fixed the equip error of the most profitable banana
 - fixed the error of selling bananas if there are more than 1
+
+17.10.2024
+- can't Claim harvest now. If it can be fixed, I will add this. Fixed the bot stopping with this error. 
 
 
 ## Features
