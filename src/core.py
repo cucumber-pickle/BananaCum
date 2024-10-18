@@ -154,55 +154,55 @@ class Banana:
         self.set_auth_header(token)
         get_user = self.get_user_info(token)
         response = self._get('get_lottery_info')
-        data = response.get('data', {})
+        try:
+            data = response.get('data', {})
 
-        max_click = get_user['data']['max_click_count']
-        today_click = get_user['data']['today_click_count']
-        
-        if max_click > today_click:
-            click = self.do_click(token, max_click - today_click)
-            clicked = click['data'].get('peel', 0)
-            if click['msg'] == "Success":
-                log(f"{hju}Success Clicked {pth}{clicked}")
+            max_click = get_user['data']['max_click_count']
+            today_click = get_user['data']['today_click_count']
+
+            if max_click > today_click:
+                click = self.do_click(token, max_click - today_click)
+                clicked = click['data'].get('peel', 0)
+                if click['msg'] == "Success":
+                    log(f"{hju}Success Clicked {pth}{clicked}")
+                else:
+                    log(f"{mrh}{click['msg']}")
             else:
-                log(f"{mrh}{click['msg']}")
-        else:
-            log(f"{kng}Out of clicks, banana break")
+                log(f"{kng}Out of clicks, banana break")
 
-        now = datetime.now()
-        last_start = data['last_countdown_start_time']
-        countdown_interval = data['countdown_interval']
-        countdown_end = data['countdown_end']
-        last_start_time = datetime.fromtimestamp(last_start / 1000)
-        remaining_time = last_start_time + timedelta(minutes=countdown_interval) - now
+            now = datetime.now()
+            last_start = data['last_countdown_start_time']
+            countdown_interval = data['countdown_interval']
+            countdown_end = data['countdown_end']
+            last_start_time = datetime.fromtimestamp(last_start / 1000)
+            remaining_time = last_start_time + timedelta(minutes=countdown_interval) - now
 
-        response_invite = self._get('get_invite_list?inviteType=1&pageNum=1&pageSize=15')
-        if response_invite.get('data'):
-            claim_lottery_count = response_invite.get('data').get('claim_lottery_count')
+            response_invite = self._get('get_invite_list?inviteType=1&pageNum=1&pageSize=15')
+            if response_invite.get('data'):
+                claim_lottery_count = response_invite.get('data').get('claim_lottery_count')
 
-            if claim_lottery_count > 0:
-                claim_lottery = self.claim_lottery(token, lottery_type=2)
+                if claim_lottery_count > 0:
+                    claim_lottery = self.claim_lottery(token, lottery_type=2)
+                    if claim_lottery['msg'] == "Success":
+                        log(f"{bru}Lottery {hju}claimed invite bonus successfully")
+                    else:
+                        log(f"{mrh}{claim_lottery['msg']}")
+
+            if remaining_time.total_seconds() > 0 and not countdown_end:
+                hours, remainder = divmod(remaining_time.total_seconds(), 3600)
+                minutes, seconds = divmod(remainder, 60)
+                log(f"{hju}Claim available in : {pth}{int(hours)}h {int(minutes)}m {int(seconds)}s")
+            else:
+                claim_lottery = self.claim_lottery(token, lottery_type=1)
                 if claim_lottery['msg'] == "Success":
-                    log(f"{bru}Lottery {hju}claimed invite bonus successfully")
+                    log(f"{bru}Lottery {hju}claimed successfully")
                 else:
                     log(f"{mrh}{claim_lottery['msg']}")
 
-        if remaining_time.total_seconds() > 0 and not countdown_end:
-            hours, remainder = divmod(remaining_time.total_seconds(), 3600)
-            minutes, seconds = divmod(remainder, 60)
-            log(f"{hju}Claim available in : {pth}{int(hours)}h {int(minutes)}m {int(seconds)}s")
-        else:
-            claim_lottery = self.claim_lottery(token, lottery_type=1)
-            if claim_lottery['msg'] == "Success":
-                log(f"{bru}Lottery {hju}claimed successfully")
-            else:
-                log(f"{mrh}{claim_lottery['msg']}")
+            get_lottery = self.get_user_info(token)
+            harvest = get_lottery['data']['lottery_info']['remain_lottery_count']
+            log(bru + f"You have {pth}{harvest} remain_lottery_count")
 
-        get_lottery = self.get_user_info(token)
-        harvest = get_lottery['data']['lottery_info']['remain_lottery_count']
-        log(bru + f"You have {pth}{harvest} remain_lottery_count")
-
-        try:
             while harvest > 0:
                 harvest = self.do_lottery(token)
                 log(kng + "Waiting 10 seconds before next lottery")
@@ -248,48 +248,50 @@ class Banana:
         get_user = self.get_user_info(token)
         page_number = 1
         banana_bag = []
-        
-        while True:
-            response = self._get(f'get_banana_list/v2?page_num={page_number}&page_size=10')
-            banana_list = response.get('data', {}).get('list', [])
-            banana_bag.extend([banana for banana in banana_list if banana['count'] >= 1])
-            total_bananas = response.get('data', {}).get('total', 0)
-            if page_number * 10 >= total_bananas:
-                break
-            
-            page_number += 1 
-        
-        if not banana_bag:
-            log(mrh + "No bananas available to equip.")
-            return
-        highest = max(banana_bag, key=lambda x: x['daily_peel_limit'])
-        if highest['daily_peel_limit'] > get_user['data']['equip_banana']['daily_peel_limit']:
-            equip_banana = self.do_equip(token, highest['banana_id'])
-            if equip_banana['msg'] == "Success":
-                log(bru + f"Got a new, higher banana")
+        try:
+            while True:
+                response = self._get(f'get_banana_list/v2?page_num={page_number}&page_size=10')
+                banana_list = response.get('data', {}).get('list', [])
+                banana_bag.extend([banana for banana in banana_list if banana['count'] >= 1])
+                total_bananas = response.get('data', {}).get('total', 0)
+                if page_number * 10 >= total_bananas:
+                    break
+
+                page_number += 1
+
+            if not banana_bag:
+                log(mrh + "No bananas available to equip.")
+                return
+            highest = max(banana_bag, key=lambda x: x['daily_peel_limit'])
+            if highest['daily_peel_limit'] > get_user['data']['equip_banana']['daily_peel_limit']:
+                equip_banana = self.do_equip(token, highest['banana_id'])
+                if equip_banana['msg'] == "Success":
+                    log(bru + f"Got a new, higher banana")
+                    log(hju + f"Banana name: {pth}{highest['name']}")
+                    log(hju + f"Banana ripeness: {pth}{highest['ripeness']}")
+                    log(hju + f"Banana limit: {pth}{highest['daily_peel_limit']} {hju} peel / day")
+                else:
+                    log(f"{mrh}{equip_banana['msg']}")
+            else:
+                log(kng + f"Already using the highest banana")
                 log(hju + f"Banana name: {pth}{highest['name']}")
                 log(hju + f"Banana ripeness: {pth}{highest['ripeness']}")
                 log(hju + f"Banana limit: {pth}{highest['daily_peel_limit']} {hju} peel / day")
-            else:
-                log(f"{mrh}{equip_banana['msg']}")
-        else:
-            log(kng + f"Already using the highest banana")
-            log(hju + f"Banana name: {pth}{highest['name']}")
-            log(hju + f"Banana ripeness: {pth}{highest['ripeness']}")
-            log(hju + f"Banana limit: {pth}{highest['daily_peel_limit']} {hju} peel / day")
 
-        if config["auto_sell"]:
-            count_banana = [banana for banana in banana_bag if banana['count'] > 1]
-            for sell in count_banana:
-                sell_banana = self.do_sell(token, sell['banana_id'], 1)
-                get_peel = sell_banana['data']['sell_got_peel']
-                get_usdt = sell_banana['data']['sell_got_usdt']
+            if config["auto_sell"]:
+                count_banana = [banana for banana in banana_bag if banana['count'] > 1]
+                for sell in count_banana:
+                    sell_banana = self.do_sell(token, sell['banana_id'], 1)
+                    get_peel = sell_banana['data']['sell_got_peel']
+                    get_usdt = sell_banana['data']['sell_got_usdt']
 
-                if sell_banana['msg'] == "Success":
-                    log(hju + f"Successfully Sold : {pth}{sell['name']}")
-                    log(hju + f"You got {pth}{get_peel} {kng}peel | {pth}{get_usdt} {hju}USDT")
-                else:
-                    log(f"{mrh}{sell_banana['msg']}")
+                    if sell_banana['msg'] == "Success":
+                        log(hju + f"Successfully Sold : {pth}{sell['name']}")
+                        log(hju + f"You got {pth}{get_peel} {kng}peel | {pth}{get_usdt} {hju}USDT")
+                    else:
+                        log(f"{mrh}{sell_banana['msg']}")
+        except Exception as e:
+            log(mrh + f'Failed banana_list')
 
         def fame(task_name, max_length=25):
             if len(task_name) > max_length:
@@ -356,14 +358,17 @@ class Banana:
         all_quests = []
         
         while True:
-            response = self._get(f'get_quest_list/v2?page_num={page_number}&page_size=10')
-            quest_list = response.get('data', {}).get('list', [])
-            all_quests.extend(quest_list)
-            total_quests = response.get('data', {}).get('total', 0)
-            if page_number * 10 >= total_quests:
-                break
-            
-            page_number += 1 
+            try:
+                response = self._get(f'get_quest_list/v2?page_num={page_number}&page_size=10')
+                quest_list = response.get('data', {}).get('list', [])
+                all_quests.extend(quest_list)
+                total_quests = response.get('data', {}).get('total', 0)
+                if page_number * 10 >= total_quests:
+                    break
+
+                page_number += 1
+            except:
+                log(mrh + f"Failed quest list")
         return all_quests
 
     def achieve_quest(self, token: str, quest_id: int):
