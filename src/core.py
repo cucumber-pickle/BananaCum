@@ -133,18 +133,16 @@ class Banana:
                 if self.proxies:
                     self.proxy_index = (self.proxy_index + 1) % len(self.proxies)
                 time.sleep(2) 
+    def get_request_time(self):
+        return int(time.time() * 1000)
 
     def set_auth_header(self, token: str):
-        self.headers.update({'Authorization': token})
+        self.headers.update({
+            'Authorization': token,
+            'Content-Type': 'application/json',
 
-    def get_user_ads_info(self, token: str):
-        self.set_auth_header(token)
-        return self._get('user_ads_info')
+        })
 
-    def get_share_info(self, token: str):
-        self.set_auth_header(token)
-        return self._get('get_share_info')
-    get_share_info
 
     def get_user_info(self, token: str):
         self.set_auth_header(token)
@@ -156,7 +154,6 @@ class Banana:
         response = self._get('get_lottery_info')
         try:
             data = response.get('data', {})
-
             max_click = get_user['data']['max_click_count']
             today_click = get_user['data']['today_click_count']
 
@@ -204,12 +201,26 @@ class Banana:
             log(bru + f"You have {pth}{harvest} remain_lottery_count")
 
             while harvest > 0:
-                harvest = self.do_lottery(token)
-                log(kng + "Waiting 10 seconds before next lottery")
-                countdown_timer(10)
+                user_ads_info = self.user_ads_info(token)
+                if user_ads_info and user_ads_info.get('data').get('show_for_peels'):
+                    countdown_timer(10)
+                    harvest = self.do_lottery(token)
+                    self.claim_ads_income(token)
+                else:
+                    countdown_timer(1)
+                    harvest = self.do_lottery(token)
         except Exception as e:
+            log(e)
             log(mrh + f"Сlaim harvest failed!")
 
+
+    def get_share_info(self, token: str):
+        self.set_auth_header(token)
+        return self._get('get_share_info')
+
+    def user_ads_info(self, token: str):
+        self.set_auth_header(token)
+        return self._get('user_ads_info')
 
     def do_click(self, token: str, click_count: int):
         self.set_auth_header(token)
@@ -222,11 +233,16 @@ class Banana:
         return self._post('claim_lottery', payload)
 
     def do_lottery(self, token: str):
-        self.set_auth_header(token)
+
+        self.headers.update({
+            'Authorization': token,
+            'Content-Type': 'application/json',
+            'x-interceptor-id': '28071317665964c4506c26c6479f686aa1a2688f5a8d5ef89af219680208bfe66306a3ab8b6d56c2027bfb158ac4f098'
+        })
         response = self._post('do_lottery', {})
         data = response.get('data', {})
         banana_info = data.get('banana_info', {})
-        
+
         if response.get('msg') == "Success":
             log(f"{bru}Banana name: {pth}{banana_info.get('name', '')}")
             log(f"{bru}Banana ripeness: {pth}{banana_info.get('ripeness', '')}")
@@ -235,13 +251,47 @@ class Banana:
                 f"{bru} | "
                 f"{pth}{banana_info.get('sell_exchange_usdt', '')} {hju}USDT"
             )
-            
+
+            banana_id = banana_info.get('banana_id', 0)
+            self.do_share(token, banana_id)
+
             remain_lottery_count = data.get('remain_lottery_count', 0)
             log(f"{hju}Remaining lottery count: {pth}{remain_lottery_count}")
+
             return remain_lottery_count
         else:
             log(f"{mrh}{response.get('msg', '')}")
             return 0
+
+    def do_share(self, token: str, banana_id):
+        self.set_auth_header(token)
+        payload = {"banana_id": banana_id}
+        response = self._post('do_share', payload)
+
+        if response.get('msg') == "Success":
+            peel = response['data'].get('peel', 0)
+            peel_total = response['data'].get('peel_total', 0)
+
+            log(f"{hju}Success share!")
+            log(f"{bru}Claimed peels: {pth}{peel}")
+            log(f"{bru}Peel total: {pth}{peel_total} ")
+        else:
+            log(f"{mrh}{response.get('msg', '')}")
+
+    def claim_ads_income(self, token: str):
+        self.set_auth_header(token)
+        response = self._post('claim_ads_income', {})
+
+        if response.get('msg') == "Success":
+            income = response['data'].get('income', 0)
+            peels = response['data'].get('peels', 0)
+            speedup = response['data'].get('speedup', 0)
+
+            log(f"{bru}Claimed income: {pth}{income} USDT")
+            log(f"{bru}Claimed peels: {pth}{peels}")
+            log(f"{bru}Speedup: {pth}{speedup}")
+        else:
+            log(f"{mrh}{response.get('msg', '')}")
 
     def banana_list(self, token: str):
         self.set_auth_header(token)
@@ -249,20 +299,23 @@ class Banana:
         page_number = 1
         banana_bag = []
         try:
-            while True:
+            for page_number in range(1, 20):
                 response = self._get(f'get_banana_list/v2?page_num={page_number}&page_size=10')
-                banana_list = response.get('data', {}).get('list', [])
-                banana_bag.extend([banana for banana in banana_list if banana['count'] >= 1])
-                total_bananas = response.get('data', {}).get('total', 0)
-                if page_number * 10 >= total_bananas:
+                if response.get('msg') != "Success":
                     break
 
-                page_number += 1
+                banana_list = response.get('data', {}).get('list', [])
+                banana_bag.extend(banana for banana in banana_list if banana['count'] >= 1)
+
+                if page_number * 10 >= response.get('data', {}).get('total', 0):
+                    break
 
             if not banana_bag:
                 log(mrh + "No bananas available to equip.")
                 return
             highest = max(banana_bag, key=lambda x: x['daily_peel_limit'])
+            current_equip_id = get_user['data']['equip_banana']['banana_id']
+
             if highest['daily_peel_limit'] > get_user['data']['equip_banana']['daily_peel_limit']:
                 equip_banana = self.do_equip(token, highest['banana_id'])
                 if equip_banana['msg'] == "Success":
@@ -335,6 +388,7 @@ class Banana:
                             log(mrh + f"Failed quest")
                         if quest_status == "Success":
                             log(hju + f"Quest {pth}{quest_name} claimed successfully.")
+                            countdown_timer(3)
                         else:
                             log(mrh + f"Real verification needed for {pth}{quest_name}.")
 
@@ -345,6 +399,7 @@ class Banana:
 
                         if claim_lottery_response.get('msg') == "Success":
                             log(hju + "Successfully claimed quest lottery!")
+                            countdown_timer(3)
                         else:
                             log(mrh + "Failed to claim quest lottery.")
                 except Exception as e:
@@ -372,7 +427,10 @@ class Banana:
         return all_quests
 
     def achieve_quest(self, token: str, quest_id: int):
-        self.set_auth_header(token)
+        self.headers.update({
+            'Authorization': token,
+            'x-interceptor-id': 'a572954edccd61bbbb45e80814a42b39ae21468413f897afb60a19ca5d8374f46b2689a33747b192ae770f7b4d91fbe4'
+        })
         payload = {"quest_id": quest_id}
         return self._post('achieve_quest', payload)
 
@@ -428,6 +486,7 @@ class Banana:
                     hours, remainder = divmod(remaining_time.total_seconds(), 3600)
                     minutes, seconds = divmod(remainder, 60)
                     log(hju + f"Countdown after baboost: {pth}{int(hours)}h {int(minutes)}m {int(seconds)}s")
+                    countdown_timer(3)
                 else:
                     break
                 
