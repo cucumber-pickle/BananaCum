@@ -84,28 +84,66 @@ def main():
     total_accounts = len(queries)
     tokens = load_tokens()
 
-    for current_index, query in enumerate(queries):
-        user_id = banana.extract_user_id(query)
-        existing_token = tokens.get(user_id, [])
+    while True:
+        for current_index, query in enumerate(queries):
+            try:
+                user_id = banana.extract_user_id(query)
+                existing_token = tokens.get(user_id, [])
 
-        if existing_token:
-            token_to_use = existing_token[0]
-        else:
-            new_token = banana.login(query)
-            if new_token:
-                if user_id in tokens:
-                    tokens[user_id].append(new_token)
+                if existing_token:
+                    token_to_use = existing_token[0]
                 else:
-                    tokens[user_id] = [new_token]
-                save_tokens(tokens)
-                token_to_use = new_token
-            else:
-                log(f"Failed to get token for user ID {user_id}")
+                    new_token = banana.login(query)
+                    if new_token:
+                        if user_id in tokens:
+                            tokens[user_id].append(new_token)
+                        else:
+                            tokens[user_id] = [new_token]
+                        save_tokens(tokens)
+                        token_to_use = new_token
+                    else:
+                        log(f"Failed to get token for user ID {user_id}")
+                        continue
+
+                process_token(banana, token_to_use, current_index + 1, total_accounts)
+
+            except HTTPError as e:
+                log(mrh + f"HTTP error occurred : check last.log for detail")
+                log_error(f"{str(e)}")
                 continue
+            except (IndexError, JSONDecodeError) as e:
+                log(mrh + f"Data extraction error : check last.log for detail.")
+                log_error(f"{str(e)}")
+            except ConnectionError:
+                log(mrh + f"Connection lost : Unable to reach the server.")
+                continue  # Continue to the next query
+            except Timeout:
+                log(mrh + f"Request timed out : The server is taking too long to respond.")
+                continue  # Continue to the next query
+            except ProxyError as e:
+                log(mrh + f"Proxy error : Failed to connect through the specified proxy.")
+                if "407" in str(e):
+                    log(bru + f"Proxy authentication failed. Trying another.")
+                    if banana.proxies:
+                        banana.proxy_index = (banana.proxy_index + 1) % len(banana.proxies)
+                        proxy = banana.proxies[banana.proxy_index]
+                        log(bru + f"Switching proxy: {pth}{proxy}")
+                    else:
+                        log(mrh + f"No more proxies available.")
+                        continue  # Continue to the next query
+                else:
+                    log(htm + f"An error occurred : {htm}{e}")
+                    continue  # Continue to the next query
+            except RequestException as e:
+                log(mrh + f"General request error : check last.log for detail.")
+                log_error(f"{str(e)}")
+                continue  # Continue to the next query
+            except Exception as e:
+                log(mrh + f"An unexpected error occurred : check last.log for detail.")
+                log_error(f"{str(e)}")
+                continue  # Continue to the next query
 
-        process_token(banana, token_to_use, current_index + 1, total_accounts)
-
-    countdown_timer(config["cycle_delay"])
+        countdown_timer(config["cycle_delay"])
 
 
 if __name__ == '__main__':
