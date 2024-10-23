@@ -97,42 +97,28 @@ class Banana:
         self.headers['User-Agent'] = generate_random_user_agent()
 
     def _post(self, endpoint, payload):
-        try:
-            self.set_random_user_agent()
-            response = self.scraper.post(
-                url=f"{self.base_url}/{endpoint}",
-                headers=self.headers,
-                json=payload,
-                proxies=self.get_current_proxy(),
-                timeout=10
-            )
-            response.raise_for_status()
-            return response.json()
-        except RequestException as e:
-            # log(mrh + f"Something wrong please check {hju}last.log {mrh}file!")
-            log_error(f"{str(e)}")
-            if self.proxies:
-                self.proxy_index = (self.proxy_index + 1) % len(self.proxies)
-
+        self.set_random_user_agent()
+        response = self.scraper.post(
+            url=f"{self.base_url}/{endpoint}",
+            headers=self.headers,
+            json=payload,
+            proxies=self.get_current_proxy(),
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
 
     def _get(self, endpoint):
-        while True:
-            try:
-                self.set_random_user_agent()
-                response = self.scraper.get(
-                    url=f"{self.base_url}/{endpoint}",
-                    headers=self.headers,
-                    proxies=self.get_current_proxy(),
-                    timeout=10
-                )
-                response.raise_for_status()
-                return response.json()
-            except RequestException as e:
-                log(mrh + f"Something wrong please check {hju}last.log {mrh}file!")
-                log_error(f"{str(e)}")
-                if self.proxies:
-                    self.proxy_index = (self.proxy_index + 1) % len(self.proxies)
-                time.sleep(2) 
+        self.set_random_user_agent()
+        response = self.scraper.get(
+            url=f"{self.base_url}/{endpoint}",
+            headers=self.headers,
+            proxies=self.get_current_proxy(),
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+
     def get_request_time(self):
         return int(time.time() * 1000)
 
