@@ -8,55 +8,51 @@ from src.deeplchain import log,log_error, countdown_timer, mrh, htm, bru, kng, p
 init(autoreset=True)
 config = load_config()
 
-def process_token(banana, token, current_index, total_accounts): 
-    try:
-        use_proxy = config.get('use_proxy', False)
-        user_info = banana.get_user_info(token)
-        data = user_info['data']
-        if isinstance(data, str): 
-            data = json.loads(data)
-        
-        if use_proxy and banana.proxies:
-            proxy = banana.get_current_proxy()
-            if proxy:
-                proxy_url = proxy.get('http', '')
-                if '@' in proxy_url: 
-                    host_port = proxy_url.split('@')[-1] 
-                else:
-                    host_port = proxy_url.split('//')[-1] 
+def process_token(banana, token, current_index, total_accounts):
+    use_proxy = config.get('use_proxy', False)
+    user_info = banana.get_user_info(token)
+    data = user_info['data']
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    if use_proxy and banana.proxies:
+        proxy = banana.get_current_proxy()
+        if proxy:
+            proxy_url = proxy.get('http', '')
+            if '@' in proxy_url:
+                host_port = proxy_url.split('@')[-1]
             else:
-                host_port = 'No proxy'
+                host_port = proxy_url.split('//')[-1]
         else:
-            host_port = 'No proxy' 
-        
-        username = data.get('username', 'Unknown')
-        total_usdt = data.get('usdt', 0)
-        total_peel = data.get('peel', 0)
-        click_count = data.get('max_click_count', 0)
-        speedup_count = data.get('speedup_count', 0)
-        total_banana = data.get('banana_count', 0)
-        
-        log(hju + f"Account: {pth}{current_index}/{total_accounts}")
-        log(hju + f"Using proxy: {pth}{host_port}") 
-        log(htm + "~" * 38)
-        
-        if use_proxy and banana.proxies:
-            banana.proxy_index = (banana.proxy_index + 1) % len(banana.proxies)
+            host_port = 'No proxy'
+    else:
+        host_port = 'No proxy'
 
-        log(bru + f"Logged in as {pth}{username}")
-        log(hju + f"Balance: {pth}{total_peel} {kng}PEEL {hju}| {pth}{total_usdt} {hju}USDT")
-        log(hju + f"Click limit: {pth}{click_count} {hju}| BaBoost: {pth}{speedup_count}") 
+    username = data.get('username', 'Unknown')
+    total_usdt = data.get('usdt', 0)
+    total_peel = data.get('peel', 0)
+    click_count = data.get('max_click_count', 0)
+    speedup_count = data.get('speedup_count', 0)
+    total_banana = data.get('banana_count', 0)
 
-        banana.get_lottery(token)
-        banana.banana_list(token)
-        banana.do_speedup(token)
+    log(hju + f"Account: {pth}{current_index}/{total_accounts}")
+    log(hju + f"Using proxy: {pth}{host_port}")
+    log(htm + "~" * 38)
 
-        log(f"{hju}You have a total {pth}{total_banana} {kng}Banana")
-        log(htm + "~" * 38)
-        countdown_timer(config["delay_account"])
-    except RequestException as e:
-        log(mrh + f"Something wrong please check {hju}last.log {mrh}file!")
-        log_error(f"{str(e)}")
+    if use_proxy and banana.proxies:
+        banana.proxy_index = (banana.proxy_index + 1) % len(banana.proxies)
+
+    log(bru + f"Logged in as {pth}{username}")
+    log(hju + f"Balance: {pth}{total_peel} {kng}PEEL {hju}| {pth}{total_usdt} {hju}USDT")
+    log(hju + f"Click limit: {pth}{click_count} {hju}| BaBoost: {pth}{speedup_count}")
+    log(hju + f"You have a total {pth}{total_banana} {kng}Banana")
+
+    banana.get_lottery(token)
+    banana.banana_list(token)
+    banana.do_speedup(token)
+
+    log(htm + "~" * 38)
+    countdown_timer(config["delay_account"])
 
 def load_tokens():
     try:
@@ -73,6 +69,7 @@ def main():
     _clear()
     _banner()
     banana = Banana()
+    remaining_times = []
 
     try:
         with open('query.txt', 'r') as file:
@@ -150,11 +147,6 @@ if __name__ == '__main__':
     while True:
         try:
             main()
-        except Exception as e:
-            log(mrh + f"Something wrong please check {hju}last.log {mrh}file!")
-            log_error(f"{str(e)}")
-            log(f"{pth}~" * 38)
-            countdown_timer(5)
         except KeyboardInterrupt:
             log(mrh + "Progress terminated by user")
             sys.exit(0)
