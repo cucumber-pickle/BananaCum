@@ -42,7 +42,7 @@ class Banana:
     def __init__(self):
         self.base_url = "https://interface.carv.io/banana"
         self.scraper = cloudscraper.create_scraper() 
-        self.headers = headers
+        self.headers = headers()
         self.proxy_index = 0
         self.proxies = [] 
         self.token_manager = TokenManager()
