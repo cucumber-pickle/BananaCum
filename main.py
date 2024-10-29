@@ -2,7 +2,7 @@ import sys
 import json
 from colorama import *
 from src.core import Banana, config
-from requests.exceptions import ConnectionError, Timeout, ProxyError, RequestException, HTTPError
+from requests.exceptions import ConnectionError, Timeout, ProxyError, RequestException, HTTPError, JSONDecodeError
 from src.deeplchain import log,log_error, countdown_timer, mrh, htm, bru, kng, pth, hju, _banner, _clear, load_config
 
 init(autoreset=True)

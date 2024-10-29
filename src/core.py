@@ -55,10 +55,15 @@ class Banana:
         with open('query.txt', 'r') as file:
             return file.read().strip()
 
-    def extract_user_id(self, query):
+    # def extract_user_id(self, query):
+    #     query_params = parse_qs(query)
+    #     user_info = json.loads(query_params.get('user')[0])
+    #     return str(user_info['id'])
+
+    def extract_user_id(self, query: str) -> dict:
         query_params = parse_qs(query)
         user_info = json.loads(query_params['user'][0])
-        return str(user_info['id'])
+        return str(user_info.get('id'))
 
     def load_proxies(self):
         proxies = []
@@ -80,12 +85,17 @@ class Banana:
     def login(self, query):
         user_id = self.extract_user_id(query)
         payload = {'tgInfo': query, 'InviteCode': ""}
-        response = self._post('login', payload)
-        token = response.get('data', {}).get('token', '').strip()
-        
+        response = self.scraper.post(
+            url=f"{self.base_url}/login",
+            headers=self.headers,
+            json=payload,
+            proxies=self.get_current_proxy(),
+            timeout=10
+        )
+        token = response.json().get('data', {}).get('token', '').strip()
         if token:
             self.token_manager.save_token(user_id, token)
-        return token 
+        return token
 
     def get_current_proxy(self):
         if self.proxies:
@@ -97,7 +107,6 @@ class Banana:
         self.headers['User-Agent'] = generate_random_user_agent()
 
     def _post(self, endpoint, payload):
-        self.set_random_user_agent()
         response = self.scraper.post(
             url=f"{self.base_url}/{endpoint}",
             headers=self.headers,
@@ -109,7 +118,6 @@ class Banana:
         return response.json()
 
     def _get(self, endpoint):
-        self.set_random_user_agent()
         response = self.scraper.get(
             url=f"{self.base_url}/{endpoint}",
             headers=self.headers,
@@ -223,7 +231,7 @@ class Banana:
         self.headers.update({
             'Authorization': token,
             'Content-Type': 'application/json',
-            'x-interceptor-id': '28071317665964c4506c26c6479f686aa1a2688f5a8d5ef89af219680208bfe66306a3ab8b6d56c2027bfb158ac4f098'
+            'x-interceptor-id': 'ce32a49dee93afb4a622a5211a422b57'
         })
         response = self._post('do_lottery', {})
         data = response.get('data', {})
@@ -415,7 +423,7 @@ class Banana:
     def achieve_quest(self, token: str, quest_id: int):
         self.headers.update({
             'Authorization': token,
-            'x-interceptor-id': 'a572954edccd61bbbb45e80814a42b39ae21468413f897afb60a19ca5d8374f46b2689a33747b192ae770f7b4d91fbe4'
+            'x-interceptor-id': 'd814560d1e143b40a32b10bec0c5c147'
         })
         payload = {"quest_id": quest_id}
         return self._post('achieve_quest', payload)
