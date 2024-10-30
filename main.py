@@ -96,7 +96,7 @@ def main():
                             tokens[user_id].append(new_token)
                         else:
                             tokens[user_id] = [new_token]
-                        save_tokens(tokens)
+                        # save_tokens(tokens)
                         token_to_use = new_token
                     else:
                         log(f"Failed to get token for user ID {user_id}")

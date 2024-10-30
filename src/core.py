@@ -93,8 +93,8 @@ class Banana:
             timeout=10
         )
         token = response.json().get('data', {}).get('token', '').strip()
-        if token:
-            self.token_manager.save_token(user_id, token)
+        # if token:
+        #     self.token_manager.save_token(user_id, token)
         return token
 
     def get_current_proxy(self):
