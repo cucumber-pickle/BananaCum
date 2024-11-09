@@ -87,23 +87,29 @@ def main():
         for current_index, query in enumerate(queries):
             try:
                 user_id = banana.extract_user_id(query)
-                existing_token = tokens.get(user_id, [])
+                # existing_token = tokens.get(user_id, [])
+                #
+                # if existing_token:
+                #     token_to_use = existing_token[0]
+                # else:
+                #     new_token = banana.login(query)
+                #     if new_token:
+                #         if user_id in tokens:
+                #             tokens[user_id].append(new_token)
+                #         else:
+                #             tokens[user_id] = [new_token]
+                #         # save_tokens(tokens)
+                #         token_to_use = new_token
+                #     else:
+                #         log(f"Failed to get token for user ID {user_id}")
+                #         continue
 
-                if existing_token:
-                    token_to_use = existing_token[0]
+                new_token = banana.login(query)
+                if new_token:
+                    token_to_use = new_token
                 else:
-                    new_token = banana.login(query)
-                    if new_token:
-                        if user_id in tokens:
-                            tokens[user_id].append(new_token)
-                        else:
-                            tokens[user_id] = [new_token]
-                        # save_tokens(tokens)
-                        token_to_use = new_token
-                    else:
-                        log(f"Failed to get token for user ID {user_id}")
-                        continue
-
+                    log(f"Failed to get token for user ID {user_id}")
+                    continue
 
                 process_token(banana, token_to_use, current_index + 1, total_accounts)
 
