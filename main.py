@@ -10,10 +10,6 @@ config = load_config()
 
 def process_token(banana, token, current_index, total_accounts):
     use_proxy = config.get('use_proxy', False)
-    user_info = banana.get_user_info(token)
-    data = user_info['data']
-    if isinstance(data, str):
-        data = json.loads(data)
 
     if use_proxy and banana.proxies:
         proxy = banana.get_current_proxy()
@@ -28,16 +24,22 @@ def process_token(banana, token, current_index, total_accounts):
     else:
         host_port = 'No proxy'
 
+    log(hju + f"Account: {pth}{current_index}/{total_accounts}")
+    log(hju + f"Using proxy: {pth}{host_port}")
+    log(htm + "~" * 38)
+
+    user_info = banana.get_user_info(token)
+    # print(user_info)
+    data = user_info['data']
+    if isinstance(data, str):
+        data = json.loads(data)
+
     username = data.get('username', 'Unknown')
     total_usdt = data.get('usdt', 0)
     total_peel = data.get('peel', 0)
     click_count = data.get('max_click_count', 0)
     speedup_count = data.get('speedup_count', 0)
     total_banana = data.get('banana_count', 0)
-
-    log(hju + f"Account: {pth}{current_index}/{total_accounts}")
-    log(hju + f"Using proxy: {pth}{host_port}")
-    log(htm + "~" * 38)
 
     if use_proxy and banana.proxies:
         banana.proxy_index = (banana.proxy_index + 1) % len(banana.proxies)
@@ -101,6 +103,7 @@ def main():
                     else:
                         log(f"Failed to get token for user ID {user_id}")
                         continue
+
 
                 process_token(banana, token_to_use, current_index + 1, total_accounts)
 

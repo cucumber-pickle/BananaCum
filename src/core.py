@@ -7,6 +7,7 @@ from src.headers import headers
 from urllib.parse import parse_qs
 from src.agent import generate_random_user_agent
 from datetime import datetime, timedelta
+from Crypto.Cipher import AES
 from requests.exceptions import RequestException
 from src.agent import generate_random_user_agent
 from src.deeplchain import log, log_error, mrh, pth, kng, hju, bru, load_config, countdown_timer
@@ -127,13 +128,39 @@ class Banana:
         response.raise_for_status()
         return response.json()
 
+    def pad(self, s):
+        BS = 16
+        return s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+
+    def SA(self, e=None):
+        if e is None:
+            e = int(time.time() * 1000)
+
+        def encrypt(t, n):
+            n = str(n).zfill(16)[:16]
+            n = n.encode('utf-8')
+            t = str(t).encode('utf-8')
+            cipher = AES.new(n, AES.MODE_CBC, iv=n)
+            padded = self.pad(t.decode('utf-8'))
+            encrypted = cipher.encrypt(padded.encode('utf-8'))
+            hex_str = ''.join([format(b, '02x') for b in encrypted])
+            return hex_str
+
+        wA = "https://interface.carv.io"
+        xA = "JVQXFtvBnIMTMB9t"
+
+        result = encrypt(str(e), xA)
+        return result
+
     def get_request_time(self):
         return int(time.time() * 1000)
 
     def set_auth_header(self, token: str):
+        x_interceptor_id = self.SA()
         self.headers.update({
-            'Authorization': token,
+            "Authorization": f"Bearer {token}",
             'Content-Type': 'application/json',
+            "X-Interceptor-Id": x_interceptor_id
 
         })
 
@@ -227,11 +254,12 @@ class Banana:
         return self._post('claim_lottery', payload)
 
     def do_lottery(self, token: str):
-
+        x_interceptor_id = self.SA()
         self.headers.update({
-            'Authorization': token,
+            "Authorization": f"Bearer {token}",
             'Content-Type': 'application/json',
-            'x-interceptor-id': 'ce32a49dee93afb4a622a5211a422b57'
+            "X-Interceptor-Id": x_interceptor_id
+
         })
         response = self._post('do_lottery', {})
         data = response.get('data', {})
@@ -421,9 +449,12 @@ class Banana:
         return all_quests
 
     def achieve_quest(self, token: str, quest_id: int):
+        x_interceptor_id = self.SA()
         self.headers.update({
-            'Authorization': token,
-            'x-interceptor-id': 'd814560d1e143b40a32b10bec0c5c147'
+            "Authorization": f"Bearer {token}",
+            'Content-Type': 'application/json',
+            "X-Interceptor-Id": x_interceptor_id
+
         })
         payload = {"quest_id": quest_id}
         return self._post('achieve_quest', payload)
