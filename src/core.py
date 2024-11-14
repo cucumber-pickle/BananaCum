@@ -94,6 +94,8 @@ class Banana:
             timeout=10
         )
         token = response.json().get('data', {}).get('token', '').strip()
+        # print(response.text)
+        # print(response.status_code)
         # if token:
         #     self.token_manager.save_token(user_id, token)
         return token
@@ -125,6 +127,7 @@ class Banana:
             proxies=self.get_current_proxy(),
             timeout=10
         )
+        # print(response.text)
         response.raise_for_status()
         return response.json()
 
@@ -147,9 +150,10 @@ class Banana:
             return hex_str
 
         wA = "https://interface.carv.io"
-        xA = "JVQXFtvBnIMTMB9t"
+        xA = "EWbnkc7qHBtenQee"
 
         result = encrypt(str(e), xA)
+        # print(result)
         return result
 
     def get_request_time(self):
