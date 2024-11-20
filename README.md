@@ -78,6 +78,17 @@ Create a config.json file in the root directory with the following structure:
 
 `cycle_delay`: Delay between different cycles of operations (in seconds).
 
+### Proxy Setup (Optional):
+
+If you enable proxy support in `config.json`, create a `proxies.txt` file in the root directory, containing a list of proxies, one per line.
+
+Example (proxy format: username:password@host:port):
+
+   ```graphql
+user1:pass1@123.123.123.123:8080
+user2:pass2@456.456.456.456:8080
+   ```
+
 ## Fill query.txt
 Add a query.txt file containing the login information (e.g., tokens or other necessary data). Each line should represent a separate account.
 1. Use PC/Laptop or Use USB Debugging Phone
